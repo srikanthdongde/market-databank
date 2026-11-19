@@ -1,0 +1,13 @@
+Year,Region_State,Crop,Season,Area_Thousand_Ha,Production_Thousand_Tonnes,Yield_Kg_Per_Ha
+2023,Punjab,Wheat,Rabi,3500.5,17850.0,5100
+2023,Haryana,Wheat,Rabi,2550.0,12240.0,4800
+2023,Madhya Pradesh,Soybean,Kharif,5400.2,6480.0,1200
+2023,Maharashtra,Cotton,Kharif,4200.0,1680.0,400
+2023,Uttar Pradesh,Sugarcane,Annual,2200.0,178200.0,81000
+2023,West Bengal,Rice,Kharif,5450.0,15805.0,2900
+2023,Gujarat,Groundnut,Kharif,1650.0,3960.0,2400
+2023,Karnataka,Maize,Kharif,1350.0,4590.0,3400
+2023,Andhra Pradesh,Rice,Kharif,2400.0,8160.0,3400
+2023,Rajasthan,Mustard,Rabi,2800.0,4200.0,1500
+2024,Punjab,Wheat,Rabi,3510.0,18252.0,5200
+2024,Madhya Pradesh,Wheat,Rabi,6200.0,21080.0,3400

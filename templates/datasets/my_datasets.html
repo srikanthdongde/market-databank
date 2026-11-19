@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+
+{% block title %}My Uploaded Datasets | Market Databank{% endblock %}
+
+{% block content %}
+<div class="container-xl py-4">
+  <div class="page-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+    <div>
+      <h1><i class="bi bi-folder-check text-primary me-2"></i>My Uploaded Datasets</h1>
+      <p>Manage, edit, toggle visibility, and download your contributed market datasets.</p>
+    </div>
+    <a href="{% url 'dataset_upload' %}" class="btn btn-portal d-flex align-items-center gap-1">
+      <i class="bi bi-cloud-arrow-up-fill"></i> Upload New Dataset
+    </a>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-4">
+      <div class="stat-card">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="stat-label">Total Contributions</div>
+            <div class="stat-number">{{ total_user_datasets }}</div>
+          </div>
+          <div class="stat-icon primary"><i class="bi bi-archive"></i></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="stat-card">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="stat-label">Public Community Datasets</div>
+            <div class="stat-number text-success">{{ total_public }}</div>
+          </div>
+          <div class="stat-icon success"><i class="bi bi-globe"></i></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="stat-card">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="stat-label">Private Datasets</div>
+            <div class="stat-number text-danger">{{ total_private }}</div>
+          </div>
+          <div class="stat-icon warning"><i class="bi bi-lock"></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filter & Search Toolbar -->
+  <div class="portal-card p-3 mb-4">
+    <form method="GET" class="row g-2 align-items-center">
+      <div class="col-md-6 col-12">
+        <div class="input-group">
+          <input type="text" name="q" value="{{ query }}" class="form-control form-control-sm" placeholder="Search my datasets by title or description...">
+          <button class="btn btn-sm btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+        </div>
+      </div>
+      <div class="col-md-4 col-sm-6">
+        <select name="visibility" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="all" {% if visibility == 'all' %}selected{% endif %}>All Visibilities ({{ total_user_datasets }})</option>
+          <option value="public" {% if visibility == 'public' %}selected{% endif %}>Public Only ({{ total_public }})</option>
+          <option value="private" {% if visibility == 'private' %}selected{% endif %}>Private Only ({{ total_private }})</option>
+        </select>
+      </div>
+      <div class="col-md-2 col-sm-6 text-end">
+        <a href="{% url 'my_datasets' %}" class="btn btn-sm btn-portal-secondary w-100">Reset</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Datasets Table -->
+  <div class="portal-card">
+    <div class="portal-card-header">
+      <span class="fw-bold">My Datasets ({{ page_obj.paginator.count }})</span>
+      <span class="small text-muted">Showing {{ page_obj.start_index|default:0 }}-{{ page_obj.end_index|default:0 }}</span>
+    </div>
+
+    <div class="p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light small text-uppercase">
+            <tr>
+              <th class="ps-3">Dataset Title</th>
+              <th>Category</th>
+              <th>Visibility</th>
+              <th>Rows &bull; Size</th>
+              <th>Uploaded</th>
+              <th>Downloads</th>
+              <th class="text-end pe-3">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ds in page_obj %}
+            <tr>
+              <td class="ps-3">
+                <a href="{% url 'dataset_detail' ds.pk %}" class="fw-bold text-dark text-decoration-none hover-primary">
+                  {{ ds.title }}
+                </a>
+                <div class="small text-muted font-monospace text-truncate" style="max-width: 280px;">
+                  {{ ds.filename }}
+                </div>
+              </td>
+              <td>
+                <span class="badge-category">
+                  <i class="bi {{ ds.category.icon_class|default:'bi-folder' }}"></i>
+                  {{ ds.category.name }}
+                </span>
+              </td>
+              <td>
+                {% if ds.is_public %}
+                  <span class="badge badge-public"><i class="bi bi-globe me-1"></i>Public</span>
+                {% else %}
+                  <span class="badge badge-private"><i class="bi bi-lock me-1"></i>Private</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="fw-semibold">{{ ds.row_count }}</span> rows
+                <div class="small text-muted">{{ ds.file_size_display }}</div>
+              </td>
+              <td>
+                <div class="small text-dark">{{ ds.created_at|date:"M d, Y" }}</div>
+                <div class="small text-muted">{{ ds.created_at|time:"H:i" }}</div>
+              </td>
+              <td>
+                <span class="badge bg-light text-dark border">{{ ds.download_count }}</span>
+              </td>
+              <td class="text-end pe-3">
+                <div class="btn-group btn-group-sm">
+                  <a href="{% url 'dataset_detail' ds.pk %}" class="btn btn-outline-secondary" title="View Preview">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                  <a href="{% url 'dataset_download' ds.pk %}" class="btn btn-outline-secondary" title="Download CSV">
+                    <i class="bi bi-download"></i>
+                  </a>
+                  <a href="{% url 'dataset_edit' ds.pk %}" class="btn btn-outline-primary" title="Edit Metadata">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                  <a href="{% url 'dataset_delete' ds.pk %}" class="btn btn-outline-danger" title="Delete Dataset">
+                    <i class="bi bi-trash"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" class="text-center py-5 text-muted">
+                <i class="bi bi-folder2-open fs-1 d-block mb-2 text-secondary"></i>
+                <h6 class="fw-bold text-dark">No datasets found in your repository</h6>
+                <p class="small text-secondary mb-3">Upload your CSV datasets to start tracking, sharing, and visualizing data.</p>
+                <a href="{% url 'dataset_upload' %}" class="btn btn-sm btn-portal">Upload Dataset Now</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  {% if page_obj.has_other_pages %}
+  <nav class="mt-4">
+    <ul class="pagination pagination-sm justify-content-center">
+      {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if visibility %}&visibility={{ visibility }}{% endif %}">Previous</a>
+      </li>
+      {% endif %}
+      <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+      {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if visibility %}&visibility={{ visibility }}{% endif %}">Next</a>
+      </li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+</div>
+{% endblock %}

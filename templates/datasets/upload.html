@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block title %}Upload Market Dataset | Market Databank{% endblock %}
+
+{% block content %}
+<div class="container-xl py-4">
+  <div class="page-header">
+    <h1><i class="bi bi-cloud-arrow-up text-primary me-2"></i>Contribute Market Dataset</h1>
+    <p>Upload a validated CSV dataset to share with the research community or store securely for private thesis work.</p>
+  </div>
+
+  <div class="row g-4">
+    <!-- Main Upload Form -->
+    <div class="col-lg-8">
+      <div class="portal-card p-4">
+        <form method="POST" enctype="multipart/form-data" novalidate id="upload-form">
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+          <div class="alert alert-danger py-2 small mb-3">
+            {% for error in form.non_field_errors %}
+              <div><i class="bi bi-exclamation-triangle-fill me-1"></i>{{ error }}</div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <!-- Dataset Title -->
+          <div class="mb-3">
+            <label for="{{ form.title.id_for_label }}" class="form-label">
+              Dataset Title <span class="text-danger">*</span>
+            </label>
+            {{ form.title }}
+            {% if form.title.errors %}
+              <div class="text-danger small mt-1">{{ form.title.errors.0 }}</div>
+            {% else %}
+              <div class="form-text small text-muted">Use a descriptive title indicating asset class, geographic region, and time frequency.</div>
+            {% endif %}
+          </div>
+
+          <!-- Category Selection -->
+          <div class="mb-3">
+            <label for="{{ form.category.id_for_label }}" class="form-label">
+              Market Sector / Category <span class="text-danger">*</span>
+            </label>
+            {{ form.category }}
+            {% if form.category.errors %}
+              <div class="text-danger small mt-1">{{ form.category.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Description -->
+          <div class="mb-3">
+            <label for="{{ form.description.id_for_label }}" class="form-label">
+              Dataset Description & Methodology <span class="text-danger">*</span>
+            </label>
+            {{ form.description }}
+            {% if form.description.errors %}
+              <div class="text-danger small mt-1">{{ form.description.errors.0 }}</div>
+            {% else %}
+              <div class="form-text small text-muted">Detail the columns, observation frequency, units of measurement, and cleaning steps applied.</div>
+            {% endif %}
+          </div>
+
+          <!-- Source Attribution -->
+          <div class="mb-3">
+            <label for="{{ form.source.id_for_label }}" class="form-label">
+              Original Data Source / Attribution <span class="text-danger">*</span>
+            </label>
+            {{ form.source }}
+            {% if form.source.errors %}
+              <div class="text-danger small mt-1">{{ form.source.errors.0 }}</div>
+            {% else %}
+              <div class="form-text small text-muted">e.g. Yahoo Finance, Kaggle, Reserve Bank of India, World Bank Open Data</div>
+            {% endif %}
+          </div>
+
+          <!-- File Upload -->
+          <div class="mb-4">
+            <label for="{{ form.uploaded_file.id_for_label }}" class="form-label">
+              Select CSV File <span class="text-danger">*</span>
+            </label>
+            {{ form.uploaded_file }}
+            {% if form.uploaded_file.errors %}
+              <div class="text-danger small mt-1">{{ form.uploaded_file.errors.0 }}</div>
+            {% endif %}
+            <div id="file-upload-feedback"></div>
+            <div class="form-text small text-muted">Supported format: Comma-Separated Values (.csv), UTF-8 encoded, max 10MB.</div>
+          </div>
+
+          <!-- Visibility Setting -->
+          <div class="p-3 bg-light rounded border mb-4">
+            <div class="form-check form-switch mb-1">
+              {{ form.is_public }}
+              <label class="form-check-label fw-bold text-dark" for="{{ form.is_public.id_for_label }}">
+                Publish as Public Community Dataset
+              </label>
+            </div>
+            <div class="small text-secondary ps-4">
+              When checked, other registered researchers can explore, inspect preview rows, and download this dataset. When unchecked, this dataset remains private and accessible solely to your account.
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-portal px-4 py-2 fw-semibold">
+              <i class="bi bi-cloud-arrow-up-fill me-1"></i> Upload and Index Dataset
+            </button>
+            <a href="{% url 'my_datasets' %}" class="btn btn-portal-secondary px-3 py-2">
+              Cancel
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Guidelines Sidebar -->
+    <div class="col-lg-4">
+      <div class="portal-card p-4 mb-4">
+        <h6 class="fw-bold text-dark mb-3 d-flex align-items-center gap-2">
+          <i class="bi bi-check-circle-fill text-success"></i>
+          <span>CSV Formatting Standards</span>
+        </h6>
+        <ul class="list-unstyled small text-secondary d-flex flex-column gap-2 mb-0">
+          <li class="d-flex align-items-start gap-2">
+            <i class="bi bi-arrow-right text-primary mt-1"></i>
+            <span><strong>Header Row:</strong> The first line must contain distinct column names (e.g. Date, Open, High, Low, Close, Volume).</span>
+          </li>
+          <li class="d-flex align-items-start gap-2">
+            <i class="bi bi-arrow-right text-primary mt-1"></i>
+            <span><strong>Delimiter:</strong> Use standard comma (,) separation. Our parser automatically sniffs delimiters.</span>
+          </li>
+          <li class="d-flex align-items-start gap-2">
+            <i class="bi bi-arrow-right text-primary mt-1"></i>
+            <span><strong>Encoding:</strong> Save as UTF-8 or UTF-8 with BOM to preserve numerical signs and currency symbols.</span>
+          </li>
+          <li class="d-flex align-items-start gap-2">
+            <i class="bi bi-arrow-right text-primary mt-1"></i>
+            <span><strong>Size Limitation:</strong> Upload files up to 10 Megabytes in size.</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="portal-card p-4 bg-light border">
+        <h6 class="fw-bold text-dark mb-2">Automated Data Ingestion</h6>
+        <p class="small text-secondary mb-0">
+          Upon submitting your file, Market Databank automatically calculates total row count, detects column schemas, and stores metadata so other researchers can discover your work effortlessly.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+
+{% block title %}Explore Datasets | Market Databank{% endblock %}
+
+{% block content %}
+<div class="container-xl py-4">
+  <!-- Page Header -->
+  <div class="page-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+    <div>
+      <h1><i class="bi bi-search text-primary me-2"></i>Explore Market Datasets</h1>
+      <p>Search, filter, and discover community and research market datasets.</p>
+    </div>
+    {% if user.is_authenticated %}
+    <a href="{% url 'dataset_upload' %}" class="btn btn-portal d-flex align-items-center gap-1">
+      <i class="bi bi-cloud-arrow-up-fill"></i> Upload Dataset
+    </a>
+    {% endif %}
+  </div>
+
+  <div class="row g-4">
+    <!-- Left Filter Sidebar -->
+    <div class="col-lg-3">
+      <div class="portal-card p-3 mb-4">
+        <h6 class="fw-bold text-dark mb-3 d-flex align-items-center justify-content-between">
+          <span><i class="bi bi-funnel-fill text-primary me-1"></i> Filter & Refine</span>
+          <a href="{% url 'explore_datasets' %}" class="small text-muted text-decoration-none">Reset</a>
+        </h6>
+
+        <form method="GET" action="{% url 'explore_datasets' %}" id="filter-form">
+          <!-- Text Search Query -->
+          <div class="mb-3">
+            <label class="form-label small">Search Keywords</label>
+            <div class="input-group">
+              <input type="text" name="q" value="{{ query }}" class="form-control form-control-sm" placeholder="Title, description, ticker...">
+              <button class="btn btn-sm btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+            </div>
+          </div>
+
+          <!-- Sector / Category Filter -->
+          <div class="mb-3">
+            <label class="form-label small">Market Sector</label>
+            <select name="category" class="form-select form-select-sm" onchange="this.form.submit()">
+              <option value="">All Categories ({{ categories.count }})</option>
+              {% for cat in categories %}
+              <option value="{{ cat.pk }}" {% if selected_category_id == cat.pk|stringformat:"s" %}selected{% endif %}>
+                {{ cat.name }} ({{ cat.count }})
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Upload Date Filter -->
+          <div class="mb-3">
+            <label class="form-label small">Upload Timeline</label>
+            <select name="date" class="form-select form-select-sm" onchange="this.form.submit()">
+              <option value="all" {% if date_filter == 'all' %}selected{% endif %}>All Time</option>
+              <option value="today" {% if date_filter == 'today' %}selected{% endif %}>Uploaded Today</option>
+              <option value="week" {% if date_filter == 'week' %}selected{% endif %}>Past 7 Days</option>
+              <option value="month" {% if date_filter == 'month' %}selected{% endif %}>Past 30 Days</option>
+              <option value="year" {% if date_filter == 'year' %}selected{% endif %}>Past Year</option>
+            </select>
+          </div>
+
+          <!-- Visibility Filter (Only relevant when logged in) -->
+          {% if user.is_authenticated %}
+          <div class="mb-3">
+            <label class="form-label small">Dataset Visibility</label>
+            <select name="visibility" class="form-select form-select-sm" onchange="this.form.submit()">
+              <option value="all" {% if visibility_filter == 'all' %}selected{% endif %}>All Accessible</option>
+              <option value="public" {% if visibility_filter == 'public' %}selected{% endif %}>Public Only</option>
+              <option value="private" {% if visibility_filter == 'private' %}selected{% endif %}>My Private Only</option>
+            </select>
+          </div>
+          {% endif %}
+
+          <!-- Sorting -->
+          <div class="mb-3">
+            <label class="form-label small">Sort By</label>
+            <select name="sort" class="form-select form-select-sm" onchange="this.form.submit()">
+              <option value="newest" {% if sort_option == 'newest' %}selected{% endif %}>Newest First</option>
+              <option value="oldest" {% if sort_option == 'oldest' %}selected{% endif %}>Oldest First</option>
+              <option value="rows_desc" {% if sort_option == 'rows_desc' %}selected{% endif %}>Most Rows</option>
+              <option value="size_desc" {% if sort_option == 'size_desc' %}selected{% endif %}>Largest File Size</option>
+              <option value="downloads" {% if sort_option == 'downloads' %}selected{% endif %}>Most Downloaded</option>
+            </select>
+          </div>
+
+          <div class="d-grid mt-3">
+            <button type="submit" class="btn btn-sm btn-portal">Apply Filters</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Quick Info Box -->
+      <div class="p-3 bg-light rounded border small text-secondary">
+        <h6 class="fw-bold text-dark small mb-2"><i class="bi bi-info-circle text-primary me-1"></i> Data Access Rules</h6>
+        <p class="mb-0">
+          Public datasets are open to all community members. Private datasets are strictly confidential and visible only to the owning researcher.
+        </p>
+      </div>
+    </div>
+
+    <!-- Right Results Grid -->
+    <div class="col-lg-9">
+      <!-- Status Bar -->
+      <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-white rounded border">
+        <div class="small text-secondary">
+          Showing <strong>{{ page_obj.start_index|default:0 }} - {{ page_obj.end_index|default:0 }}</strong> of <strong>{{ total_results }}</strong> datasets
+          {% if query %}for keyword "<strong>{{ query }}</strong>"{% endif %}
+          {% if selected_category %}in <strong>{{ selected_category.name }}</strong>{% endif %}
+        </div>
+        <div class="small text-muted">
+          Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages|default:1 }}
+        </div>
+      </div>
+
+      <!-- Cards Grid -->
+      <div class="row g-3">
+        {% for ds in page_obj %}
+        <div class="col-md-6 col-12">
+          <div class="portal-card h-100 d-flex flex-column justify-content-between p-3">
+            <div>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <a href="{% url 'explore_datasets' %}?category={{ ds.category.pk }}" class="badge-category text-decoration-none">
+                  <i class="bi {{ ds.category.icon_class|default:'bi-folder' }}"></i>
+                  {{ ds.category.name }}
+                </a>
+                <div>
+                  {% if ds.is_public %}
+                    <span class="badge badge-public"><i class="bi bi-globe me-1"></i>Public</span>
+                  {% else %}
+                    <span class="badge badge-private"><i class="bi bi-lock me-1"></i>Private</span>
+                  {% endif %}
+                </div>
+              </div>
+
+              <h5 class="fw-bold mb-2">
+                <a href="{% url 'dataset_detail' ds.pk %}" class="text-dark text-decoration-none hover-primary">
+                  {{ ds.title }}
+                </a>
+              </h5>
+
+              <p class="text-secondary small mb-3">
+                {{ ds.description|truncatewords:18 }}
+              </p>
+            </div>
+
+            <div class="pt-3 border-top mt-auto">
+              <div class="d-flex flex-wrap gap-2 small text-muted mb-2">
+                <span title="Row Count"><i class="bi bi-table me-1 text-primary"></i><strong>{{ ds.row_count }}</strong> rows</span>
+                <span>&bull;</span>
+                <span title="Column Count"><i class="bi bi-layout-three-columns me-1 text-info"></i>{{ ds.column_count }} cols</span>
+                <span>&bull;</span>
+                <span title="File Size"><i class="bi bi-file-earmark-binary me-1"></i>{{ ds.file_size_display }}</span>
+              </div>
+
+              <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                <div class="small text-muted">
+                  <i class="bi bi-person me-1"></i>{{ ds.owner.username }}
+                  <span class="ms-1">&bull; {{ ds.created_at|date:"M d" }}</span>
+                </div>
+                <div class="d-flex gap-1">
+                  <a href="{% url 'dataset_detail' ds.pk %}" class="btn btn-sm btn-portal py-1 px-2" title="Inspect Data Preview">
+                    <i class="bi bi-eye me-1"></i> Inspect
+                  </a>
+                  <a href="{% url 'dataset_download' ds.pk %}" class="btn btn-sm btn-outline-secondary py-1 px-2" title="Download CSV">
+                    <i class="bi bi-download"></i>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+          <div class="portal-card p-5 text-center">
+            <i class="bi bi-search text-muted fs-1 mb-3 d-block"></i>
+            <h5 class="fw-bold text-dark">No matching market datasets found</h5>
+            <p class="text-secondary small mb-3">Try adjusting your search keywords, clearing selected category filters, or expanding the date timeline.</p>
+            <a href="{% url 'explore_datasets' %}" class="btn btn-sm btn-portal-secondary">Clear All Filters</a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Pagination Controls -->
+      {% if page_obj.has_other_pages %}
+      <nav class="mt-4" aria-label="Dataset navigation">
+        <ul class="pagination pagination-sm justify-content-center">
+          {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page=1{% if query %}&q={{ query }}{% endif %}{% if selected_category_id %}&category={{ selected_category_id }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}{% if visibility_filter %}&visibility={{ visibility_filter }}{% endif %}{% if sort_option %}&sort={{ sort_option }}{% endif %}">&laquo; First</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_category_id %}&category={{ selected_category_id }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}{% if visibility_filter %}&visibility={{ visibility_filter }}{% endif %}{% if sort_option %}&sort={{ sort_option }}{% endif %}">Previous</a>
+          </li>
+          {% endif %}
+
+          <li class="page-item disabled">
+            <span class="page-link text-dark">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+          </li>
+
+          {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if selected_category_id %}&category={{ selected_category_id }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}{% if visibility_filter %}&visibility={{ visibility_filter }}{% endif %}{% if sort_option %}&sort={{ sort_option }}{% endif %}">Next</a>
+          </li>
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}{% if selected_category_id %}&category={{ selected_category_id }}{% endif %}{% if date_filter %}&date={{ date_filter }}{% endif %}{% if visibility_filter %}&visibility={{ visibility_filter }}{% endif %}{% if sort_option %}&sort={{ sort_option }}{% endif %}">Last &raquo;</a>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

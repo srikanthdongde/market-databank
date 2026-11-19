@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+
+{% block title %}User Profile | Market Databank{% endblock %}
+
+{% block content %}
+<div class="container-xl py-4">
+  <div class="page-header">
+    <h1><i class="bi bi-person-badge text-primary me-2"></i>Researcher Profile & Settings</h1>
+    <p>Manage your account credentials, institutional affiliation, and dataset portfolio metrics.</p>
+  </div>
+
+  <div class="row g-4">
+    <!-- Left Column: User Summary & Stats -->
+    <div class="col-lg-4">
+      <div class="portal-card p-4 text-center mb-4">
+        <div class="stat-icon primary mx-auto mb-3" style="width: 72px; height: 72px; font-size: 2rem;">
+          <i class="bi bi-person"></i>
+        </div>
+        <h4 class="fw-bold text-dark mb-1">{{ user.get_full_name|default:user.username }}</h4>
+        <div class="text-secondary small mb-2">@{{ user.username }}</div>
+        <span class="badge bg-light text-dark border px-3 py-1 mb-3">
+          <i class="bi bi-mortarboard me-1 text-primary"></i>{{ user.profile.organization|default:"Academic Researcher" }}
+        </span>
+
+        <p class="small text-secondary mb-3">
+          {{ user.profile.bio|default:"No bio provided yet." }}
+        </p>
+
+        <div class="pt-3 border-top text-start small text-muted">
+          <div class="mb-1"><i class="bi bi-envelope me-2"></i>{{ user.email }}</div>
+          <div><i class="bi bi-calendar-check me-2"></i>Joined {{ user.date_joined|date:"F d, Y" }}</div>
+        </div>
+      </div>
+
+      <!-- Upload Statistics Card -->
+      <div class="portal-card p-3">
+        <h6 class="fw-bold text-dark mb-3"><i class="bi bi-bar-chart-line text-primary me-1"></i> Contribution Summary</h6>
+        <div class="d-flex justify-content-between align-items-center py-2 border-bottom small">
+          <span class="text-secondary">Total Datasets Uploaded:</span>
+          <strong class="text-dark">{{ total_uploads }}</strong>
+        </div>
+        <div class="d-flex justify-content-between align-items-center py-2 border-bottom small">
+          <span class="text-secondary">Public Datasets:</span>
+          <span class="badge badge-public">{{ public_uploads }}</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center py-2 border-bottom small">
+          <span class="text-secondary">Private Datasets:</span>
+          <span class="badge badge-private">{{ private_uploads }}</span>
+        </div>
+        <div class="d-flex justify-content-between align-items-center py-2 small">
+          <span class="text-secondary">Total Times Downloaded:</span>
+          <strong class="text-primary">{{ total_downloads }} downloads</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Edit Profile Form -->
+    <div class="col-lg-8">
+      <div class="portal-card p-4 mb-4">
+        <h5 class="fw-bold text-dark mb-3 pb-2 border-bottom">Edit Profile Information</h5>
+
+        <form method="POST" novalidate>
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+          <div class="alert alert-danger py-2 small mb-3">
+            {% for error in form.non_field_errors %}
+              <div>{{ error }}</div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <label class="form-label">First Name</label>
+              {{ form.first_name }}
+              {% if form.first_name.errors %}
+                <div class="text-danger small mt-1">{{ form.first_name.errors.0 }}</div>
+              {% endif %}
+            </div>
+
+            <div class="col-sm-6">
+              <label class="form-label">Last Name</label>
+              {{ form.last_name }}
+              {% if form.last_name.errors %}
+                <div class="text-danger small mt-1">{{ form.last_name.errors.0 }}</div>
+              {% endif %}
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Email Address</label>
+              {{ form.email }}
+              {% if form.email.errors %}
+                <div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>
+              {% endif %}
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Institutional Affiliation / Organization</label>
+              {{ form.organization }}
+              {% if form.organization.errors %}
+                <div class="text-danger small mt-1">{{ form.organization.errors.0 }}</div>
+              {% endif %}
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Researcher Bio / Research Focus</label>
+              {{ form.bio }}
+              {% if form.bio.errors %}
+                <div class="text-danger small mt-1">{{ form.bio.errors.0 }}</div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="mt-4 pt-2">
+            <button type="submit" class="btn btn-portal px-4 py-2">
+              <i class="bi bi-save me-1"></i> Update Profile
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Recent Uploads Table -->
+      <div class="portal-card p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="fw-bold text-dark mb-0">Recent Upload Activity</h6>
+          <a href="{% url 'my_datasets' %}" class="small text-decoration-none">View All Uploads</a>
+        </div>
+
+        {% if recent_datasets %}
+        <div class="list-group list-group-flush">
+          {% for ds in recent_datasets %}
+          <div class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center">
+            <div>
+              <a href="{% url 'dataset_detail' ds.pk %}" class="fw-semibold text-dark text-decoration-none hover-primary">
+                {{ ds.title }}
+              </a>
+              <div class="small text-muted">
+                {{ ds.category.name }} &bull; {{ ds.row_count }} rows &bull; {{ ds.created_at|date:"M d, Y" }}
+              </div>
+            </div>
+            <div>
+              {% if ds.is_public %}
+                <span class="badge badge-public">Public</span>
+              {% else %}
+                <span class="badge badge-private">Private</span>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted small mb-0">No datasets uploaded yet.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+Quarter,Metro_Area,Median_Sale_Price_USD,Inventory_Units,Avg_Days_On_Market,Mortgage_Rate_30Y_Pct
+2023-Q1,New York Metro,645000,14200,62,6.35
+2023-Q2,New York Metro,660000,15800,48,6.71
+2023-Q3,New York Metro,652000,14900,51,7.31
+2023-Q4,New York Metro,640000,13100,65,7.29
+2023-Q1,Austin Tech Hub,480000,6200,54,6.35
+2023-Q2,Austin Tech Hub,495000,6900,42,6.71
+2023-Q3,Austin Tech Hub,485000,7100,49,7.31
+2023-Q4,Austin Tech Hub,470000,6500,60,7.29
+2024-Q1,Seattle Metro,720000,5800,38,6.82
+2024-Q2,Seattle Metro,745000,6400,32,6.95

@@ -1,0 +1,6 @@
+Participant_ID,Sector_Tracked,Investment_Horiz_Years,Risk_Tolerance,Expected_Return_Pct
+P1001,Cryptocurrency,1.5,High,25.0
+P1002,Stock Market,5.0,Moderate,12.5
+P1003,Real Estate,10.0,Conservative,8.0
+P1004,Agriculture,3.0,Moderate,9.5
+P1005,Stock Market,7.0,High,16.0

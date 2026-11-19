@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block title %}About | Market Databank Generation & Sharing Platform{% endblock %}
+
+{% block content %}
+<div class="container-xl py-4">
+  <div class="page-header">
+    <h1><i class="bi bi-info-circle text-primary me-2"></i>About the Platform</h1>
+    <p>Academic capstone project documenting architecture, design principles, and data governance.</p>
+  </div>
+
+  <div class="row g-4">
+    <!-- Main Description -->
+    <div class="col-lg-8">
+      <!-- Section 1: Objective -->
+      <div class="portal-card p-4 mb-4">
+        <h4 class="fw-bold text-dark mb-3">1. Project Objective & Vision</h4>
+        <p class="text-secondary leading-relaxed">
+          The <strong>Market Databank Generation and Sharing Platform</strong> is an academic web platform designed to facilitate the collection, curation, indexing, previewing, and secure exchange of market-oriented datasets. Academic researchers and computer science students frequently face hurdles accessing reliable, structured tabular data across volatile economic sectors—such as daily stock market movements, agricultural crop yields, cryptocurrency liquidity, real estate indices, and macroeconomic trends.
+        </p>
+        <p class="text-secondary mb-0">
+          This platform eliminates this friction by providing a self-service data sharing hub with built-in data validation, automatic schema detection, dynamic visualization, and strict confidentiality controls.
+        </p>
+      </div>
+
+      <!-- Section 2: Technical Architecture -->
+      <div class="portal-card p-4 mb-4">
+        <h4 class="fw-bold text-dark mb-3">2. System Technology Stack</h4>
+        <div class="table-responsive">
+          <table class="table table-bordered table-striped small align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th style="width: 25%;">Layer</th>
+                <th style="width: 35%;">Technology</th>
+                <th>Role in Application</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="fw-bold">Backend Framework</td>
+                <td>Python 3.13 &bull; Django 6.1</td>
+                <td>Routing, ORM, CSRF defense, authentication middleware, and secure file streaming.</td>
+              </tr>
+              <tr>
+                <td class="fw-bold">Database</td>
+                <td>SQLite3 (Relational)</td>
+                <td>Zero-configuration, lightweight transactional storage for models, users, and categories.</td>
+              </tr>
+              <tr>
+                <td class="fw-bold">CSV Processing</td>
+                <td>Python <code>csv</code> & <code>io.StringIO</code></td>
+                <td>RFC 4180 parsing, dialect sniffing, header extraction, and tabular row previewing.</td>
+              </tr>
+              <tr>
+                <td class="fw-bold">User Interface</td>
+                <td>Bootstrap 5.3.3 & CSS3</td>
+                <td>Academic research portal aesthetic, responsive grid, custom typography, and mobile-ready UI.</td>
+              </tr>
+              <tr>
+                <td class="fw-bold">Data Visualization</td>
+                <td>Chart.js 4.4.1</td>
+                <td>Category distribution analytics and dynamic empirical trend visualizer for sample data.</td>
+              </tr>
+              <tr>
+                <td class="fw-bold">Security & Auth</td>
+                <td>Django Auth System</td>
+                <td>Session management, password hashing (PBKDF2), role separation, and <code>PermissionDenied</code> view enforcement.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section 3: CSV Ingestion Pipeline -->
+      <div class="portal-card p-4 mb-4">
+        <h4 class="fw-bold text-dark mb-3">3. CSV Validation & Ingestion Pipeline</h4>
+        <p class="text-secondary small mb-3">
+          To maintain data integrity and protect the server against corrupt uploads, every submitted file executes through a strict validation sequence:
+        </p>
+        <div class="d-flex flex-column gap-3">
+          <div class="p-3 bg-light rounded border">
+            <div class="fw-bold text-dark mb-1"><i class="bi bi-1-circle-fill text-primary me-2"></i>Extension & Size Filter</div>
+            <div class="small text-secondary">The system checks for the <code>.csv</code> extension and strictly limits file size to 10 Megabytes to prevent denial-of-service via resource exhaustion.</div>
+          </div>
+          <div class="p-3 bg-light rounded border">
+            <div class="fw-bold text-dark mb-1"><i class="bi bi-2-circle-fill text-primary me-2"></i>Encoding & Byte Stream Decoding</div>
+            <div class="small text-secondary">Files are verified across UTF-8, UTF-8-SIG (Excel BOM), and Latin-1 encodings. Non-text or binary files are rejected immediately.</div>
+          </div>
+          <div class="p-3 bg-light rounded border">
+            <div class="fw-bold text-dark mb-1"><i class="bi bi-3-circle-fill text-primary me-2"></i>Dialect Sniffing & Header Extraction</div>
+            <div class="small text-secondary">The standard library <code>csv.Sniffer</code> analyzes sample byte buffers to determine delimiters (comma, semicolon, tab). The first row is validated as non-empty column headers.</div>
+          </div>
+          <div class="p-3 bg-light rounded border">
+            <div class="fw-bold text-dark mb-1"><i class="bi bi-4-circle-fill text-primary me-2"></i>Metadata Indexing & Tabular Preview</div>
+            <div class="small text-secondary">Row counts, column counts, and column names are stored in the database record, and the first 20 rows are rendered into an interactive preview table on the details page.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 4: Data Governance -->
+      <div class="portal-card p-4">
+        <h4 class="fw-bold text-dark mb-3">4. Public vs. Private Data Governance</h4>
+        <p class="text-secondary small mb-3">
+          Data security is enforced at the database query and view handler levels:
+        </p>
+        <ul class="text-secondary small d-flex flex-column gap-2 mb-0">
+          <li><strong>Public Datasets:</strong> Accessible to any registered user for browsing, previewing, and direct CSV downloading.</li>
+          <li><strong>Private Datasets:</strong> Completely isolated in database queries. Only the original author can access the details, view the preview, edit metadata, or download the CSV. Any unauthorized request raises an HTTP 403 <code>PermissionDenied</code> exception.</li>
+          <li><strong>Secure File Streaming:</strong> Files are delivered via Django's <code>FileResponse</code> attachment stream rather than unprotected media directory links.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Right Sidebar: Academic Meta -->
+    <div class="col-lg-4">
+      <div class="portal-card p-4 mb-4">
+        <h6 class="fw-bold text-dark mb-3"><i class="bi bi-mortarboard text-primary me-1"></i> Academic Project Info</h6>
+        <dl class="row small mb-0">
+          <dt class="col-5 text-muted">Project Title:</dt>
+          <dd class="col-7 text-dark fw-bold">Market Databank Generation and Sharing Platform</dd>
+
+          <dt class="col-5 text-muted">Course / Degree:</dt>
+          <dd class="col-7 text-dark">B.Tech Computer Science & Engineering</dd>
+
+          <dt class="col-5 text-muted">Core Focus:</dt>
+          <dd class="col-7 text-dark">Full-Stack Web Development, Data Handling & Access Control</dd>
+
+          <dt class="col-5 text-muted">Architecture:</dt>
+          <dd class="col-7 text-dark">Model-View-Template (MVT)</dd>
+
+          <dt class="col-5 text-muted">Database Engine:</dt>
+          <dd class="col-7 text-dark">SQLite 3 (Relational)</dd>
+        </dl>
+      </div>
+
+      <div class="portal-card p-4 bg-light border">
+        <h6 class="fw-bold text-dark mb-2">Supported Market Sectors</h6>
+        <div class="d-flex flex-wrap gap-2 mt-2">
+          <span class="badge bg-white text-dark border p-2"><i class="bi bi-graph-up-arrow text-primary me-1"></i>Stock Market</span>
+          <span class="badge bg-white text-dark border p-2"><i class="bi bi-tree text-success me-1"></i>Agriculture</span>
+          <span class="badge bg-white text-dark border p-2"><i class="bi bi-buildings text-warning me-1"></i>Real Estate</span>
+          <span class="badge bg-white text-dark border p-2"><i class="bi bi-currency-bitcoin text-danger me-1"></i>Cryptocurrency</span>
+          <span class="badge bg-white text-dark border p-2"><i class="bi bi-briefcase text-info me-1"></i>Business & Economics</span>
+          <span class="badge bg-white text-dark border p-2"><i class="bi bi-grid-3x3-gap text-secondary me-1"></i>Other</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirm Deletion | Market Databank{% endblock %}
+
+{% block content %}
+<div class="container-xl py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8">
+      <div class="portal-card p-4 p-md-5 border-danger shadow-sm">
+        <div class="text-center mb-4">
+          <div class="stat-icon mx-auto mb-3" style="background-color: #fee2e2; color: #dc2626;">
+            <i class="bi bi-trash-fill fs-3"></i>
+          </div>
+          <h2 class="h4 fw-bold text-dark mb-1">Delete Dataset Permanently?</h2>
+          <p class="text-secondary small">This action cannot be undone. The dataset record and uploaded CSV file will be permanently removed.</p>
+        </div>
+
+        <div class="p-3 bg-light rounded border mb-4">
+          <div class="fw-bold text-dark mb-1">{{ dataset.title }}</div>
+          <div class="small text-muted mb-2">
+            Category: <span class="badge bg-secondary-subtle text-secondary">{{ dataset.category.name }}</span> &bull;
+            Rows: <strong>{{ dataset.row_count }}</strong> &bull;
+            File Size: <strong>{{ dataset.file_size_display }}</strong>
+          </div>
+          <div class="font-monospace small text-secondary text-truncate">
+            File: {{ dataset.filename }}
+          </div>
+        </div>
+
+        <form method="POST">
+          {% csrf_token %}
+          <div class="d-flex gap-2 justify-content-center">
+            <button type="submit" class="btn btn-danger px-4 py-2">
+              <i class="bi bi-trash me-1"></i> Yes, Delete Permanently
+            </button>
+            <a href="{% url 'dataset_detail' dataset.pk %}" class="btn btn-portal-secondary px-4 py-2">
+              Cancel & Keep Dataset
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

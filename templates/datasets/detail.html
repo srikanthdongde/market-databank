@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ dataset.title }} | Market Databank{% endblock %}
+
+{% block content %}
+<div class="container-xl py-4">
+  <!-- Breadcrumb Navigation -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small">
+      <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'explore_datasets' %}">Datasets</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'explore_datasets' %}?category={{ dataset.category.pk }}">{{ dataset.category.name }}</a></li>
+      <li class="breadcrumb-item active" aria-current="page">{{ dataset.title|truncatechars:35 }}</li>
+    </ol>
+  </nav>
+
+  <!-- Dataset Header & Metadata Card -->
+  <div class="portal-card p-4 mb-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3 pb-3 border-bottom mb-3">
+      <div>
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+          <a href="{% url 'explore_datasets' %}?category={{ dataset.category.pk }}" class="badge-category text-decoration-none">
+            <i class="bi {{ dataset.category.icon_class|default:'bi-folder' }}"></i>
+            {{ dataset.category.name }}
+          </a>
+          {% if dataset.is_public %}
+            <span class="badge badge-public"><i class="bi bi-globe me-1"></i>Public Community Dataset</span>
+          {% else %}
+            <span class="badge badge-private"><i class="bi bi-lock me-1"></i>Private Research Dataset (Owner Only)</span>
+          {% endif %}
+        </div>
+        <h1 class="h3 fw-bold text-dark mb-2">{{ dataset.title }}</h1>
+        <div class="small text-muted d-flex flex-wrap align-items-center gap-3">
+          <span><i class="bi bi-person me-1"></i>Uploaded by <strong>{{ dataset.owner.username }}</strong></span>
+          <span>&bull;</span>
+          <span><i class="bi bi-calendar3 me-1"></i>{{ dataset.created_at|date:"F d, Y - H:i" }}</span>
+          {% if dataset.updated_at != dataset.created_at %}
+          <span>&bull;</span>
+          <span><i class="bi bi-pencil-square me-1"></i>Updated {{ dataset.updated_at|date:"M d, Y" }}</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'dataset_download' dataset.pk %}" class="btn btn-portal d-flex align-items-center gap-2">
+          <i class="bi bi-download"></i>
+          <span>Download CSV ({{ dataset.file_size_display }})</span>
+        </a>
+        {% if is_owner %}
+        <a href="{% url 'dataset_edit' dataset.pk %}" class="btn btn-portal-secondary d-flex align-items-center gap-1">
+          <i class="bi bi-pencil"></i> Edit
+        </a>
+        <a href="{% url 'dataset_delete' dataset.pk %}" class="btn btn-outline-danger d-flex align-items-center gap-1">
+          <i class="bi bi-trash"></i> Delete
+        </a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Overview & Source Attribution -->
+    <div class="row g-4">
+      <div class="col-lg-8">
+        <h6 class="fw-bold text-dark mb-2">Dataset Overview & Description</h6>
+        <p class="text-secondary mb-3 lh-base" style="white-space: pre-line;">{{ dataset.description }}</p>
+
+        <div class="p-3 bg-light rounded border small">
+          <div class="d-flex align-items-center gap-2 text-dark fw-semibold mb-1">
+            <i class="bi bi-link-45deg text-primary fs-5"></i> Primary Data Source / Attribution:
+          </div>
+          <div class="text-secondary font-monospace">{{ dataset.source }}</div>
+        </div>
+      </div>
+
+      <!-- File Metrics Box -->
+      <div class="col-lg-4">
+        <div class="bg-light p-3 rounded border">
+          <h6 class="fw-bold text-dark small text-uppercase mb-3"><i class="bi bi-file-earmark-spreadsheet text-primary me-1"></i> File Specifications</h6>
+          <dl class="row small mb-0">
+            <dt class="col-6 text-muted">File Name:</dt>
+            <dd class="col-6 text-dark font-monospace text-truncate" title="{{ dataset.filename }}">{{ dataset.filename }}</dd>
+
+            <dt class="col-6 text-muted">File Size:</dt>
+            <dd class="col-6 text-dark font-monospace">{{ dataset.file_size_display }}</dd>
+
+            <dt class="col-6 text-muted">Total Data Rows:</dt>
+            <dd class="col-6 text-dark fw-bold font-monospace">{{ dataset.row_count|default:"-" }}</dd>
+
+            <dt class="col-6 text-muted">Total Columns:</dt>
+            <dd class="col-6 text-dark font-monospace">{{ dataset.column_count|default:"-" }}</dd>
+
+            <dt class="col-6 text-muted">Download Count:</dt>
+            <dd class="col-6 text-dark font-monospace">{{ dataset.download_count }} downloads</dd>
+
+            <dt class="col-6 text-muted">Storage Format:</dt>
+            <dd class="col-6 text-dark">RFC 4180 CSV</dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detected Column Schema -->
+  {% if dataset.columns_list %}
+  <div class="portal-card p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h6 class="fw-bold text-dark mb-0">Detected Column Schema ({{ dataset.column_count }} fields)</h6>
+        <small class="text-secondary">Extracted automatically from CSV header row</small>
+      </div>
+      <button class="btn btn-sm btn-outline-secondary" id="btn-copy-columns" data-columns="{{ dataset.column_names }}">
+        <i class="bi bi-clipboard me-1"></i> Copy Headers
+      </button>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+      {% for col in dataset.columns_list %}
+        <span class="badge bg-light text-dark border font-monospace py-2 px-3">
+          <i class="bi bi-hash text-muted me-1"></i>{{ col }}
+        </span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Tabular Data Preview (First 15-20 Rows) -->
+  <div class="portal-card mb-4">
+    <div class="portal-card-header">
+      <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-table text-primary"></i>
+        <span>Data Preview (Showing First {{ total_preview_rows }} of {{ dataset.row_count }} Rows)</span>
+      </div>
+      <span class="badge bg-secondary-subtle text-secondary border">Live Tabular Slice</span>
+    </div>
+
+    <div class="p-3">
+      {% if preview_headers and preview_rows %}
+      <div class="preview-table-container">
+        <table class="table preview-table table-hover align-middle">
+          <thead>
+            <tr>
+              <th scope="col" class="text-center" style="width: 50px;">#</th>
+              {% for header in preview_headers %}
+                <th scope="col">{{ header }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in preview_rows %}
+            <tr>
+              <td class="text-center text-muted fw-bold small">{{ forloop.counter }}</td>
+              {% for cell in row %}
+                <td>{{ cell }}</td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="text-muted small mt-2 d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-info-circle me-1"></i> Preview is restricted to the first {{ total_preview_rows }} rows for swift browser rendering.</span>
+        <span>Download full dataset for all <strong>{{ dataset.row_count }}</strong> rows.</span>
+      </div>
+      {% else %}
+      <div class="text-center py-4 text-muted">
+        <p class="mb-0">Unable to generate tabular preview. The CSV file may be empty or formatted abnormally.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Dynamic Sample Visualization Chart (If numeric metrics exist in dataset) -->
+  {% if chart_values and chart_labels %}
+  <div class="portal-card p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <h6 class="fw-bold text-dark mb-0">Empirical Sample Trend: {{ chart_column_name }}</h6>
+        <small class="text-secondary">Interactive preview of values across the first {{ chart_values|length }} parsed records</small>
+      </div>
+      <span class="badge bg-light text-primary border">Chart.js Visualizer</span>
+    </div>
+    <div style="height: 280px;">
+      <canvas id="datasetPreviewTrendChart"></canvas>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if chart_values and chart_labels %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const trendCtx = document.getElementById('datasetPreviewTrendChart');
+  if (trendCtx) {
+    const labels = {{ chart_labels|safe }};
+    const values = {{ chart_values|safe }};
+    const metricName = "{{ chart_column_name|escapejs }}";
+
+    new Chart(trendCtx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: metricName,
+          data: values,
+          borderColor: '#0284c7',
+          backgroundColor: 'rgba(2, 132, 199, 0.1)',
+          borderWidth: 2,
+          pointRadius: 4,
+          pointBackgroundColor: '#0284c7',
+          fill: true,
+          tension: 0.25
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'top' },
+          tooltip: { mode: 'index', intersect: false }
+        },
+        scales: {
+          y: {
+            beginAtZero: false,
+            grid: { color: '#f1f5f9' }
+          },
+          x: {
+            grid: { display: false }
+          }
+        }
+      }
+    });
+  }
+});
+</script>
+{% endif %}
+{% endblock %}

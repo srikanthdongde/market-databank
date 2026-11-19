@@ -1,0 +1,318 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard | Market Databank{% endblock %}
+
+{% block content %}
+<div class="container-xl py-4">
+  <!-- Page Header -->
+  <div class="page-header d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+    <div>
+      <h1><i class="bi bi-speedometer2 text-primary me-2"></i>Research Dashboard</h1>
+      <p>Welcome back, <strong>{{ user.get_full_name|default:user.username }}</strong>. Real-time platform metrics and repository control.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'dataset_upload' %}" class="btn btn-portal d-flex align-items-center gap-2">
+        <i class="bi bi-cloud-arrow-up-fill"></i>
+        <span>Upload New Dataset</span>
+      </a>
+      <a href="{% url 'my_datasets' %}" class="btn btn-portal-secondary d-flex align-items-center gap-2">
+        <i class="bi bi-folder-check"></i>
+        <span>My Datasets ({{ my_datasets_count }})</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Key Statistics Cards (All from Real DB Records) -->
+  <div class="row g-3 mb-4">
+    <!-- Accessible Datasets -->
+    <div class="col-xl-3 col-sm-6">
+      <div class="stat-card">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="stat-label">Accessible Datasets</div>
+            <div class="stat-number">{{ total_accessible_count }}</div>
+          </div>
+          <div class="stat-icon primary">
+            <i class="bi bi-database"></i>
+          </div>
+        </div>
+        <div class="small text-muted mt-2">
+          <i class="bi bi-check-circle text-success me-1"></i>{{ total_public_count }} Public &bull; {{ my_private_count }} My Private
+        </div>
+      </div>
+    </div>
+
+    <!-- My Uploaded Datasets -->
+    <div class="col-xl-3 col-sm-6">
+      <div class="stat-card">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="stat-label">My Contributions</div>
+            <div class="stat-number">{{ my_datasets_count }}</div>
+          </div>
+          <div class="stat-icon success">
+            <i class="bi bi-cloud-check"></i>
+          </div>
+        </div>
+        <div class="small text-muted mt-2">
+          <span class="badge badge-public">{{ my_public_count }} Public</span>
+          <span class="badge badge-private ms-1">{{ my_private_count }} Private</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Community Public Datasets -->
+    <div class="col-xl-3 col-sm-6">
+      <div class="stat-card">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="stat-label">Platform Public Pool</div>
+            <div class="stat-number">{{ total_public_count }}</div>
+          </div>
+          <div class="stat-icon warning">
+            <i class="bi bi-globe2"></i>
+          </div>
+        </div>
+        <div class="small text-muted mt-2">
+          Available to all registered researchers
+        </div>
+      </div>
+    </div>
+
+    <!-- Market Categories -->
+    <div class="col-xl-3 col-sm-6">
+      <div class="stat-card">
+        <div class="d-flex justify-content-between align-items-start">
+          <div>
+            <div class="stat-label">Active Sectors</div>
+            <div class="stat-number">{{ categories.count }}</div>
+          </div>
+          <div class="stat-icon info">
+            <i class="bi bi-diagram-3"></i>
+          </div>
+        </div>
+        <div class="small text-muted mt-2">
+          Stock, Crypto, Agriculture, etc.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Real-Data Charts Section -->
+  <div class="row g-4 mb-4">
+    <!-- Category Distribution Bar Chart -->
+    <div class="col-lg-8">
+      <div class="portal-card h-100 p-3">
+        <div class="portal-card-header bg-white border-0 px-1 py-0 mb-3">
+          <div>
+            <h6 class="fw-bold mb-0 text-dark">Datasets Across Market Sectors</h6>
+            <small class="text-secondary">Distribution of indexed market datasets by category</small>
+          </div>
+          <span class="badge bg-light text-secondary border">Real-Time DB Sync</span>
+        </div>
+        <div style="height: 270px;">
+          <canvas id="categoryDistributionChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Visibility Doughnut Chart -->
+    <div class="col-lg-4">
+      <div class="portal-card h-100 p-3">
+        <div class="portal-card-header bg-white border-0 px-1 py-0 mb-3">
+          <div>
+            <h6 class="fw-bold mb-0 text-dark">My Data Visibility</h6>
+            <small class="text-secondary">Public sharing vs private thesis data</small>
+          </div>
+        </div>
+        <div style="height: 230px;" class="d-flex justify-content-center align-items-center">
+          <canvas id="visibilityDoughnutChart"></canvas>
+        </div>
+        <div class="d-flex justify-content-around text-center small text-secondary mt-2 pt-2 border-top">
+          <div><strong class="text-success">{{ my_public_count }}</strong> Public</div>
+          <div><strong class="text-danger">{{ my_private_count }}</strong> Private</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Uploads: Dual Column (My Datasets vs Platform Recent) -->
+  <div class="row g-4">
+    <!-- Left: My Recent Datasets -->
+    <div class="col-lg-6">
+      <div class="portal-card h-100">
+        <div class="portal-card-header">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-person-lines-fill text-primary"></i>
+            <span>My Recently Uploaded Datasets</span>
+          </div>
+          <a href="{% url 'my_datasets' %}" class="small text-decoration-none">View All ({{ my_datasets_count }})</a>
+        </div>
+        <div class="p-3">
+          {% if my_recent %}
+          <div class="list-group list-group-flush">
+            {% for ds in my_recent %}
+            <div class="list-group-item px-0 py-2 border-bottom d-flex justify-content-between align-items-center">
+              <div>
+                <a href="{% url 'dataset_detail' ds.pk %}" class="fw-semibold text-dark text-decoration-none hover-primary d-block">
+                  {{ ds.title|truncatechars:45 }}
+                </a>
+                <div class="small text-muted d-flex align-items-center gap-2 mt-1">
+                  <span class="badge bg-light text-dark border">{{ ds.category.name }}</span>
+                  <span>{{ ds.row_count }} rows</span>
+                  <span>&bull;</span>
+                  <span>{{ ds.created_at|date:"M d, Y" }}</span>
+                </div>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                {% if ds.is_public %}
+                  <span class="badge badge-public">Public</span>
+                {% else %}
+                  <span class="badge badge-private">Private</span>
+                {% endif %}
+                <a href="{% url 'dataset_detail' ds.pk %}" class="btn btn-sm btn-outline-secondary py-1 px-2" title="View details">
+                  <i class="bi bi-eye"></i>
+                </a>
+                <a href="{% url 'dataset_edit' ds.pk %}" class="btn btn-sm btn-outline-primary py-1 px-2" title="Edit">
+                  <i class="bi bi-pencil"></i>
+                </a>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="text-center py-4 text-muted">
+            <i class="bi bi-folder-plus fs-2 mb-2 d-block"></i>
+            <p class="mb-2">You haven't uploaded any market datasets yet.</p>
+            <a href="{% url 'dataset_upload' %}" class="btn btn-sm btn-portal">Upload Your First Dataset</a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Community Recent Activity -->
+    <div class="col-lg-6">
+      <div class="portal-card h-100">
+        <div class="portal-card-header">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-clock-history text-success"></i>
+            <span>Recently Added Market Datasets (Community)</span>
+          </div>
+          <a href="{% url 'explore_datasets' %}" class="small text-decoration-none">Explore All</a>
+        </div>
+        <div class="p-3">
+          {% if community_recent %}
+          <div class="list-group list-group-flush">
+            {% for ds in community_recent %}
+            <div class="list-group-item px-0 py-2 border-bottom d-flex justify-content-between align-items-center">
+              <div>
+                <a href="{% url 'dataset_detail' ds.pk %}" class="fw-semibold text-dark text-decoration-none hover-primary d-block">
+                  {{ ds.title|truncatechars:45 }}
+                </a>
+                <div class="small text-muted d-flex align-items-center gap-2 mt-1">
+                  <span class="badge bg-light text-dark border">{{ ds.category.name }}</span>
+                  <span>by <strong>{{ ds.owner.username }}</strong></span>
+                  <span>&bull;</span>
+                  <span>{{ ds.file_size_display }}</span>
+                </div>
+              </div>
+              <div>
+                <a href="{% url 'dataset_detail' ds.pk %}" class="btn btn-sm btn-portal-secondary py-1 px-2">
+                  <i class="bi bi-arrow-right"></i>
+                </a>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="text-center py-4 text-muted">
+            <p class="mb-0">No market data available yet.</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // 1. Category Bar Chart with Real DB Counts
+  const catLabels = {{ chart_labels_json|safe }};
+  const catTotalCounts = {{ chart_counts_json|safe }};
+  const catMyCounts = {{ chart_my_counts_json|safe }};
+
+  const catCtx = document.getElementById('categoryDistributionChart');
+  if (catCtx) {
+    new Chart(catCtx, {
+      type: 'bar',
+      data: {
+        labels: catLabels,
+        datasets: [
+          {
+            label: 'All Accessible Datasets',
+            data: catTotalCounts,
+            backgroundColor: '#0284c7',
+            borderRadius: 4,
+          },
+          {
+            label: 'My Uploads',
+            data: catMyCounts,
+            backgroundColor: '#0d9488',
+            borderRadius: 4,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: { font: { size: 12 } }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0 }
+          }
+        }
+      }
+    });
+  }
+
+  // 2. Visibility Doughnut Chart
+  const visData = {{ visibility_data_json|safe }};
+  const visCtx = document.getElementById('visibilityDoughnutChart');
+  if (visCtx) {
+    const totalVis = visData[0] + visData[1];
+    new Chart(visCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Public', 'Private'],
+        datasets: [{
+          data: totalVis > 0 ? visData : [1, 0],
+          backgroundColor: totalVis > 0 ? ['#10b981', '#f43f5e'] : ['#e2e8f0', '#e2e8f0'],
+          borderWidth: 2,
+          borderColor: '#ffffff',
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+          }
+        },
+        cutout: '65%'
+      }
+    });
+  }
+});
+</script>
+{% endblock %}
